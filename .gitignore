@@ -74,3 +74,4 @@ dkms.conf
 # End of https://www.gitignore.io/api/c,linux
 .ycm_extra_conf.py
 
+.vscode
