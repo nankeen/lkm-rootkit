@@ -10,7 +10,7 @@
 
 #ifdef DEBUG
 #define debug(str, ...) 					        \
-printk(KERN_DEBUG str, ##__VA_ARGS__);
+printk(KERN_DEBUG "Rootkit: " str, ##__VA_ARGS__);
 #else
 #define debug(str, ...)
 #endif

