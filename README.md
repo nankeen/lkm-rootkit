@@ -1,7 +1,7 @@
 # Rookit Kernel Module
 
 Rootkit kernel module to be inserted as a backdoor.
-Developed for Linux kernel version 4.5.
+Tested on Linux kernel version 4.5.
 
 ## TODO
 
