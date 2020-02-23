@@ -1,7 +1,7 @@
 SRCDIR := src
 BUILDROOT := ~/Projects/Coding/buildroot-2019.11.1
-#KDIR := /lib/modules/$(shell uname -r)
-KDIR := $(BUILDROOT)/output/build/linux-5.3.18/
+KDIR := /lib/modules/$(shell uname -r)/build
+#KDIR := $(BUILDROOT)/output/build/linux-4.19.16/
 ROOTFS := $(BUILDROOT)/output/target/root/
 
 obj-m += rootkit.o

