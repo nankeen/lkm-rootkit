@@ -6,7 +6,7 @@ Tested on Linux kernel version 4.5.
 ## TODO
 
 - [x] Network backdoor
-- [ ] Spawn reverse shell
+- [x] Spawn reverse shell
 - [ ] Priviledge Escalation
 - [ ] Hidden port
 - [ ] Hidden process
